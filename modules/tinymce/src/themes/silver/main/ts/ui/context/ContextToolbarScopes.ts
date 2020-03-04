@@ -8,6 +8,7 @@
 import { Toolbar } from '@ephox/bridge';
 import { Arr, Obj } from '@ephox/katamari';
 import { ValueSchema } from '@ephox/boulder';
+import { ContextTypes } from '../../ContextToolbar';
 
 // Divide the defined toolbars into forms, node scopes, and editor scopes
 export interface ScopedToolbars {
@@ -25,7 +26,7 @@ const categorise = (contextToolbars: Record<string, Toolbar.ContextFormApi | Too
   const inNodeScope: Array<Toolbar.ContextForm | Toolbar.ContextToolbar> = [ ];
   const inEditorScope: Array<Toolbar.ContextForm | Toolbar.ContextToolbar> = [ ];
   const formNavigators: Record<string, Toolbar.ToolbarButtonApi | Toolbar.ToolbarToggleButtonApi> = { };
-  const lookupTable: Record<string, Toolbar.ContextToolbar | Toolbar.ContextForm> = { };
+  const lookupTable: Record<string, ContextTypes> = { };
 
   const registerForm = (key: string, toolbarApi: Toolbar.ContextFormApi) => {
     const contextForm = ValueSchema.getOrDie(Toolbar.createContextForm(toolbarApi));
