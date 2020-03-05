@@ -241,8 +241,12 @@ const register = (editor: Editor, registryContextToolbars, sink, extras) => {
 
     const toolbarSpec = buildToolbar(toolbarApi);
     const sElem = elem.map(Element.fromDom);
-    // TODO
+
+    // TINY-4495 ASSUMPTION: Can only do toolbarApi[0].position because ContextToolbarLookup.filterToolbarsByPosition
+    // ensures all toolbars returned by ContextToolbarLookup have the same position.
+    // And everything else that gets toolbars from elsewhere only returns maximum 1 toolbar
     const anchor = getAnchor(toolbarApi[0].position, sElem);
+
     lastAnchor.set(Option.some((anchor)));
     lastElement.set(elem);
     const contextBarEle = contextbar.element();
