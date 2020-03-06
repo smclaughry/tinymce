@@ -76,15 +76,20 @@ const lookup = (scopes: ScopedToolbars, editor: Editor): Option<LookupResult> =>
   }
 
   return matchStartNode(startNode, scopes.inNodeScope, scopes.inEditorScope).orThunk(() => {
-    return TransformFind.ancestor(startNode, (elem) => {
-      // TransformFind will try to transform before doing the isRoot check, so we need to check here as well
-      if (isRoot(elem)) {
+    return TransformFind.ancestor(startNode, (ancestorElem) => {
+      // Don't continue to traverse if the start node is the root node
+      if (isRoot(ancestorElem)) {
         return Option.none();
       } else {
-        const { contextToolbars, contextForms } = matchTargetWith(elem, scopes.inNodeScope);
-        const toolbars = contextForms.length > 0 ? contextForms : contextToolbars;
-        return toolbars.length > 0 ? Option.some({ elem, toolbars }) : Option.none();
-      }
+        // TransformFind will try to transform before doing the isRoot check, so we need to check here as well
+        if (isRoot(ancestorElem)) {
+          return Option.none();
+        } else {
+          const { contextToolbars, contextForms } = matchTargetWith(ancestorElem, scopes.inNodeScope);
+          const toolbars = contextForms.length > 0 ? contextForms : contextToolbars;
+          return toolbars.length > 0 ? Option.some({ elem: ancestorElem, toolbars }) : Option.none();
+        }
+     }
     }, isRoot);
   });
 };
