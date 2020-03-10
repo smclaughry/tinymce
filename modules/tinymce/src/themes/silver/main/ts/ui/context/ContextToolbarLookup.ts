@@ -12,16 +12,16 @@ import Editor from 'tinymce/core/api/Editor';
 import { ContextTypes } from '../../ContextToolbar';
 import { ScopedToolbars } from './ContextToolbarScopes';
 
-export type LookupResult = { toolbars: Array<ContextTypes>, elem: Element };
-type MatchResult = { contextToolbars: Array<ContextTypes>, contextForms: Array<ContextTypes> };
+export type LookupResult = { toolbars: ContextTypes[], elem: Element };
+type MatchResult = { contextToolbars: ContextTypes[], contextForms: ContextTypes[] };
 
-const matchTargetWith = (elem: Element, candidates: Array<ContextTypes>): MatchResult => {
+const matchTargetWith = (elem: Element, candidates: ContextTypes[]): MatchResult => {
   const ctxs = Arr.filter(candidates, (toolbarApi) => toolbarApi.predicate(elem.dom()));
   const { pass, fail } = Arr.partition(ctxs, (t) => t.type === 'contexttoolbar');
   return { contextToolbars: pass, contextForms: fail };
 };
 
-const filterToolbarsByPosition = (toolbars: Array<ContextTypes>): Array<ContextTypes> => {
+const filterToolbarsByPosition = (toolbars: ContextTypes[]): ContextTypes[] => {
   if (toolbars.length <= 1) {
     return toolbars;
   } else {
@@ -39,7 +39,7 @@ const filterToolbarsByPosition = (toolbars: Array<ContextTypes>): Array<ContextT
   }
 };
 
-const matchStartNode = (elem: Element, nodeCandidates: Array<ContextTypes>, editorCandidates: Array<ContextTypes>): Option<LookupResult> => {
+const matchStartNode = (elem: Element, nodeCandidates: ContextTypes[], editorCandidates: ContextTypes[]): Option<LookupResult> => {
   // requirements:
   // 1. prioritise context forms over context menus
   // 2. prioritise node scoped over editor scoped context forms
@@ -76,12 +76,15 @@ const lookup = (scopes: ScopedToolbars, editor: Editor): Option<LookupResult> =>
   }
 
   return matchStartNode(startNode, scopes.inNodeScope, scopes.inEditorScope).orThunk(() => {
+    // Don't continue to traverse if the start node is the root node
+    if (isRoot(startNode)) {
+      return Option.none();
+    }
     return TransformFind.ancestor(startNode, (ancestorElem) => {
-      // Don't continue to traverse if the start node is the root node
+      // TransformFind will try to transform before doing the isRoot check, so we need to check here as well
       if (isRoot(ancestorElem)) {
         return Option.none();
       } else {
-        // TransformFind will try to transform before doing the isRoot check, so we need to check here as well
         if (isRoot(ancestorElem)) {
           return Option.none();
         } else {
