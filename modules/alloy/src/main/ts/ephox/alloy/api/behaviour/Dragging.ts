@@ -1,4 +1,4 @@
-import { Struct } from '@ephox/katamari';
+import { Option } from '@ephox/katamari';
 import { BehaviourStateInitialiser } from '../../behaviour/common/BehaviourState';
 
 import * as DraggingApis from '../../behaviour/dragging/DraggingApis';
@@ -19,7 +19,12 @@ const Dragging: DraggingBehaviour<any> = Behaviour.createModes({
   },
   extra: {
     // Extra. Does not need component as input.
-    snap: Struct.immutableBag([ 'sensor', 'range', 'output' ], [ 'extra' ]) as (sConfig: SnapConfigSpec<any>) => SnapConfig<any>
+    snap: (sConfig: SnapConfigSpec<any>): SnapConfig<any> => ({
+      sensor: sConfig.sensor,
+      range: sConfig.range,
+      output: sConfig.output,
+      extra: Option.from(sConfig.extra)
+    })
   },
   state: DragState as BehaviourStateInitialiser<DraggingConfig<any>, DraggingState>,
   apis: DraggingApis

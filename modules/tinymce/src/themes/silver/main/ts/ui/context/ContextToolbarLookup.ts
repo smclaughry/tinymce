@@ -67,11 +67,12 @@ const matchStartNode = (elem: Element, nodeCandidates: ContextTypes[], editorCan
 const lookup = (scopes: ScopedToolbars, editor: Editor): Option<LookupResult> => {
   const rootElem = Element.fromDom(editor.getBody());
   const isRoot = (elem: Element<DomNode>) => Compare.eq(elem, rootElem);
+  const isOutsideRoot = (startNode: Element<DomNode>) => !isRoot(startNode) && !Compare.contains(rootElem, startNode);
 
   const startNode = Element.fromDom(editor.selection.getNode());
 
-  // Ensure the lookup doesn't start on a parent element of the root node
-  if (Compare.contains(startNode, rootElem)) {
+  // Ensure the lookup doesn't start on a parent or sibling element of the root node
+  if (isOutsideRoot(startNode)) {
     return Option.none();
   }
 
@@ -79,21 +80,13 @@ const lookup = (scopes: ScopedToolbars, editor: Editor): Option<LookupResult> =>
     // Don't continue to traverse if the start node is the root node
     if (isRoot(startNode)) {
       return Option.none();
+    } else {
+      return TransformFind.ancestor(startNode, (ancestorElem) => {
+        const { contextToolbars, contextForms } = matchTargetWith(ancestorElem, scopes.inNodeScope);
+        const toolbars = contextForms.length > 0 ? contextForms : contextToolbars;
+        return toolbars.length > 0 ? Option.some({ elem: ancestorElem, toolbars }) : Option.none();
+      }, isRoot);
     }
-    return TransformFind.ancestor(startNode, (ancestorElem) => {
-      // TransformFind will try to transform before doing the isRoot check, so we need to check here as well
-      if (isRoot(ancestorElem)) {
-        return Option.none();
-      } else {
-        if (isRoot(ancestorElem)) {
-          return Option.none();
-        } else {
-          const { contextToolbars, contextForms } = matchTargetWith(ancestorElem, scopes.inNodeScope);
-          const toolbars = contextForms.length > 0 ? contextForms : contextToolbars;
-          return toolbars.length > 0 ? Option.some({ elem: ancestorElem, toolbars }) : Option.none();
-        }
-     }
-    }, isRoot);
   });
 };
 
