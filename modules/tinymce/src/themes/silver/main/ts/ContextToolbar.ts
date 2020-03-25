@@ -5,7 +5,7 @@
  * For commercial licenses see https://www.tiny.cloud/
  */
 
-import { AddEventsBehaviour, AlloyEvents, AlloySpec, AlloyTriggers, AnchorSpec, Behaviour, Boxes, Bubble, GuiFactory, InlineView, Keying, Layout, LayoutInside, MaxHeight, MaxWidth, Positioning } from '@ephox/alloy';
+import { AddEventsBehaviour, AlloyEvents, AlloySpec, AlloyTriggers, AnchorSpec, Behaviour, Boxes, Bubble, GuiFactory, InlineView, Keying, Layout, LayoutInside, MaxHeight, MaxWidth, Positioning, AlloyComponent } from '@ephox/alloy';
 import { Toolbar } from '@ephox/bridge';
 import { Element as DomElement } from '@ephox/dom-globals';
 import { Arr, Cell, Id, Merger, Obj, Option, Thunk } from '@ephox/katamari';
@@ -22,10 +22,15 @@ import * as ToolbarScopes from './ui/context/ContextToolbarScopes';
 import { forwardSlideEvent, renderContextToolbar } from './ui/context/ContextUi';
 import { renderToolbar } from './ui/toolbar/CommonToolbar';
 import { identifyButtons } from './ui/toolbar/Integration';
+import { UiFactoryBackstage } from './backstage/Backstage';
 
 type ScopedToolbars = ToolbarScopes.ScopedToolbars;
 
 export type ContextTypes = Toolbar.ContextToolbar | Toolbar.ContextForm;
+
+interface Extras {
+  backstage: UiFactoryBackstage;
+}
 
 const bubbleSize = 12;
 const bubbleAlignments = {
@@ -78,7 +83,7 @@ const getAnchorLayout = (position: Toolbar.ContextToolbarPosition, isTouch: bool
   }
 };
 
-const register = (editor: Editor, registryContextToolbars, sink, extras) => {
+const register = (editor: Editor, registryContextToolbars, sink: AlloyComponent, extras: Extras) => {
   const isTouch = PlatformDetection.detect().deviceType.isTouch;
 
   const contextbar = GuiFactory.build(
@@ -176,7 +181,7 @@ const register = (editor: Editor, registryContextToolbars, sink, extras) => {
 
   const getScopes: () => ScopedToolbars = Thunk.cached(() => {
     return ToolbarScopes.categorise(registryContextToolbars, (toolbarApi) => {
-      // TODO should this get multiple ctx too?
+      // ASSUMPTION: This should only ever show one context toolbar since it's used for context forms hence [toolbarApi]
       const alloySpec = buildToolbar([toolbarApi]);
       AlloyTriggers.emitWith(contextbar, forwardSlideEvent, {
         forwardContents: wrapInPopDialog(alloySpec)
@@ -184,18 +189,20 @@ const register = (editor: Editor, registryContextToolbars, sink, extras) => {
     });
   });
 
-  const buildContextToolbarGroups = (allButtons, ctx) => {
+  type ContextToolbarButtonTypes = Toolbar.ToolbarButtonApi | Toolbar.ToolbarMenuButtonApi | Toolbar.ToolbarSplitButtonApi | Toolbar.ToolbarToggleButtonApi | Toolbar.GroupToolbarButtonApi;
+
+  const buildContextToolbarGroups = (allButtons: Record<string, ContextToolbarButtonTypes>, ctx: Toolbar.ContextToolbar) => {
     return identifyButtons(editor, { buttons: allButtons, toolbar: ctx.items, allowToolbarGroups: false }, extras, Option.some([ 'form:' ]));
   };
 
-  const buildContextMenuGroups = (ctx, backstage) => {
+  const buildContextMenuGroups = (ctx: Toolbar.ContextForm, backstage: UiFactoryBackstage) => {
     return ContextForm.buildInitGroups(ctx, backstage);
   };
 
   const buildToolbar = (toolbars: Array<ContextTypes>): AlloySpec => {
     const { buttons } = editor.ui.registry.getAll();
     const scopes = getScopes();
-    const allButtons = { ...buttons, ...scopes.formNavigators };
+    const allButtons: Record<string, ContextToolbarButtonTypes> = { ...buttons, ...scopes.formNavigators };
 
     // For context toolbars we don't want to use floating or sliding, so just restrict this
     // to scrolling or wrapping (default)
@@ -216,7 +223,7 @@ const register = (editor: Editor, registryContextToolbars, sink, extras) => {
     const scopes = getScopes();
     // TODO: Have this stored in a better structure
     Obj.get(scopes.lookupTable, e.toolbarKey).each((ctx) => {
-      // TODO should this do multiple ctx too?
+      // ASSUMPTION: this is only used to open one specific toolbar at a time, hence [ctx]
       launchContext([ctx], e.target === editor ? Option.none() : Option.some(e as DomElement));
       // Forms launched via this way get immediate focus
       InlineView.getContent(contextbar).each(Keying.focusIn);
