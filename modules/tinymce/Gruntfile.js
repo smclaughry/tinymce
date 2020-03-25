@@ -4,7 +4,6 @@ let zipUtils = require('./tools/modules/zip-helper');
 let gruntUtils = require('./tools/modules/grunt-utils');
 let gruntWebPack = require('./tools/modules/grunt-webpack');
 let swag = require('@ephox/swag');
-let path = require('path');
 
 let plugins = [
   'advlist', 'anchor', 'autolink', 'autoresize', 'autosave', 'bbcode', 'charmap', 'code', 'codesample',
@@ -44,11 +43,11 @@ module.exports = function (grunt) {
       tsc: { command: 'tsc -b' }
     },
 
-    tslint: {
+    eslint: {
       options: {
-        configuration: '../../tslint.json'
+        configFile: '../../.eslintrc.json',
       },
-      files: { src: [ 'src/**/*.ts' ] }
+      target: [ 'src/**/*.ts' ]
     },
 
     globals: {
@@ -390,7 +389,7 @@ module.exports = function (grunt) {
               'modules/*/README.md',
               'modules/*/package.json',
               'modules/*/tsconfig*.json',
-              'modules/*/tslint*.json',
+              'modules/*/.eslint*.json',
               'modules/*/webpack.config.js',
               'modules/*/.stylelintignore',
               'modules/*/.stylelintrc',
@@ -401,7 +400,7 @@ module.exports = function (grunt) {
               'lerna.json',
               'package.json',
               'tsconfig*.json',
-              'tslint*.json',
+              '.eslint*.json',
               'yarn.lock'
             ]
           },
@@ -842,7 +841,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('prodBuild', [
     'shell:tsc',
-    'tslint',
+    'eslint',
     'globals',
     'rollup',
     'unicode',

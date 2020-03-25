@@ -405,10 +405,8 @@ function DOMUtils(doc: Document, settings: Partial<DOMUtilsSettings> = {}): DOMU
     // TODO: Add feature detection here in the future
     if (!isIE || node.nodeType !== 1 || deep) {
       return node.cloneNode(deep);
-    }
-
-    // Make a HTML5 safe shallow copy
-    if (!deep) {
+    } else {
+      // Make a HTML5 safe shallow copy
       const clone = doc.createElement(node.nodeName);
 
       // Copy attribs
@@ -418,8 +416,6 @@ function DOMUtils(doc: Document, settings: Partial<DOMUtilsSettings> = {}): DOMU
 
       return clone;
     }
-
-    return null;
   };
 
   const getRoot = (): HTMLElement => {
@@ -1157,7 +1153,7 @@ function DOMUtils(doc: Document, settings: Partial<DOMUtilsSettings> = {}): DOMU
     }
 
     // Remove any bound events matching the input
-    if (boundEvents && (target === doc || target === win)) {
+    if (boundEvents.length > 0 && (target === doc || target === win)) {
       i = boundEvents.length;
 
       while (i--) {
@@ -1208,7 +1204,7 @@ function DOMUtils(doc: Document, settings: Partial<DOMUtilsSettings> = {}): DOMU
 
   const destroy = () => {
     // Unbind all events bound to window/document by editor instance
-    if (boundEvents) {
+    if (boundEvents.length > 0) {
       let i = boundEvents.length;
 
       while (i--) {
